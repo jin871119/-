@@ -10,15 +10,15 @@ const getApiKey = (): string | null => {
                  (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY) ||
                  (typeof process !== 'undefined' && process.env?.API_KEY);
   
-  // 디버깅: 환경 변수 확인 (프로덕션에서는 제거)
-  if (import.meta.env.DEV) {
-    console.log('[Gemini Service] 환경 변수 확인:', {
-      'import.meta.env.VITE_GEMINI_API_KEY': import.meta.env.VITE_GEMINI_API_KEY ? '설정됨' : '없음',
-      'import.meta.env.GEMINI_API_KEY': import.meta.env.GEMINI_API_KEY ? '설정됨' : '없음',
-      'process.env.VITE_GEMINI_API_KEY': typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY ? '설정됨' : '없음',
-      'process.env.GEMINI_API_KEY': typeof process !== 'undefined' && process.env?.GEMINI_API_KEY ? '설정됨' : '없음',
-    });
-  }
+  // 디버깅: 환경 변수 확인 (프로덕션에서도 확인 가능)
+  console.log('[Gemini Service] 환경 변수 확인:', {
+    'import.meta.env.VITE_GEMINI_API_KEY': import.meta.env.VITE_GEMINI_API_KEY ? `설정됨 (${import.meta.env.VITE_GEMINI_API_KEY.substring(0, 10)}...)` : '없음',
+    'import.meta.env.GEMINI_API_KEY': import.meta.env.GEMINI_API_KEY ? `설정됨 (${import.meta.env.GEMINI_API_KEY.substring(0, 10)}...)` : '없음',
+    'import.meta.env.MODE': import.meta.env.MODE,
+    'import.meta.env.PROD': import.meta.env.PROD,
+    'process.env.VITE_GEMINI_API_KEY': typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY ? '설정됨' : '없음',
+    'process.env.GEMINI_API_KEY': typeof process !== 'undefined' && process.env?.GEMINI_API_KEY ? '설정됨' : '없음',
+  });
   
   if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY' || (typeof apiKey === 'string' && apiKey.trim() === '')) {
     console.warn('[Gemini Service] API 키가 설정되지 않았습니다.');
