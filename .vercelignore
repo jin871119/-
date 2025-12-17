@@ -1,0 +1,13 @@
+node_modules
+dist
+.vscode
+.idea
+*.log
+.DS_Store
+~$*.xlsx
+*.backup
+*.cjs
+dist.zip
+metadata.json
+배포-패키지-안내.md
+inventory-forecast-standalone.html

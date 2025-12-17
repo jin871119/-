@@ -1,0 +1,5 @@
+{
+  "name": "Inventory Forecast AI",
+  "description": "Inventory management dashboard that predicts stock depletion dates using sales data and provides AI-driven insights.",
+  "requestFramePermissions": []
+}

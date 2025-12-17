@@ -1,0 +1,287 @@
+import React, { useMemo } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { ProductForecast } from '../types';
+
+interface Props {
+  product: ProductForecast | null;
+}
+
+const SalesChart: React.FC<Props> = ({ product }) => {
+  const chartData = useMemo(() => {
+    if (!product) return [];
+
+    // 1. Reconstruct Past Stock History
+    // We know Current Stock. We know Past Sales.
+    // Past Stock [t-1] = Current Stock [t] + Sales [t]
+    
+    // Sort history oldest to newest first
+    const sortedHistory = [...product.salesHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    // Create history points working backwards from Today
+    const historyPoints = [];
+    // 가용재고 기준 (재고시트의 재고 데이터)
+    const availableStock = product.currentStock;
+    let runningStock = availableStock; // 과거 추정은 가용재고 기준
+
+    // Add Today's point (가용재고 표시)
+    historyPoints.push({
+      date: '오늘',
+      rawDate: new Date().toISOString().split('T')[0],
+      stock: availableStock, // 가용재고 표시
+      type: 'history'
+    });
+
+    // Iterate backwards through sales to reconstruct past levels
+    // We reverse the sorted history to go from Yesterday -> 30 days ago
+    [...sortedHistory].reverse().forEach(sale => {
+      runningStock += sale.quantity;
+      historyPoints.unshift({
+        date: sale.date.slice(5), // MM-DD
+        rawDate: sale.date,
+        stock: runningStock,
+        type: 'history'
+      });
+    });
+
+    // 2. Project Future Stock Depletion (총 재고 기준: 매장재고 + 물류재고)
+    // 입고 일정 반영 + 동적 판매량 반영
+    const forecastPoints = [];
+    
+    // 기본 평균 판매량 계산 (재고 부족 시 판매 감소 반영)
+    const totalSales = product.salesHistory.reduce((acc, curr) => acc + curr.quantity, 0);
+    const days = product.salesHistory.length;
+    const baseAverageDailySales = days > 0 ? totalSales / days : 0;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
+    
+    // 입고 일정 정렬
+    const sortedReorderSchedule = (product.reorderSchedule || [])
+      .filter(reorder => reorder.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    
+    // 디버깅: 입고 일정 확인
+    if (sortedReorderSchedule.length > 0) {
+      console.log(`[SalesChart] ${product.name}: 입고 일정 ${sortedReorderSchedule.length}개`, sortedReorderSchedule);
+    } else if (product.reorderSchedule && product.reorderSchedule.length > 0) {
+      console.log(`[SalesChart] ${product.name}: 입고 일정이 있지만 필터링됨`, product.reorderSchedule, 'todayStr:', todayStr);
+    } else {
+      console.log(`[SalesChart] ${product.name}: 입고 일정 없음`, product.reorderSchedule);
+    }
+    
+    // 재고가 있는 경우와 재고가 0이지만 입고 일정이 있는 경우 모두 동일한 로직 적용
+    // 50BKS처럼 입고 후 재고 증가와 판매 재개가 이어지도록 처리
+    if (baseAverageDailySales > 0 && (availableStock > 0 || sortedReorderSchedule.length > 0)) {
+      let currentForecastStock = availableStock; // 초기 재고 (0일 수도 있음)
+      let dayOffset = 1;
+      let reorderIndex = 0;
+      
+      // 재고가 0이 되는 시점까지 예측 (최대 365일)
+      // 입고가 있으면 입고 후에도 계속 예측
+      let hasReachedZero = false;
+      const maxDays = 365;
+      
+      while (dayOffset <= maxDays && !hasReachedZero) {
+         const nextDate = new Date(today);
+         nextDate.setDate(today.getDate() + dayOffset);
+         const nextDateStr = nextDate.toISOString().split('T')[0];
+         
+         // 해당 날짜에 입고가 있는지 확인
+         const hasReorderToday = sortedReorderSchedule.some(r => r.date === nextDateStr);
+         
+         // 입고 일정을 순차적으로 확인하여 해당 날짜 또는 이전 날짜의 입고를 반영
+         while (reorderIndex < sortedReorderSchedule.length) {
+           const reorder = sortedReorderSchedule[reorderIndex];
+           if (reorder.date < nextDateStr) {
+             // 이전 날짜의 입고는 이미 반영됨
+             reorderIndex++;
+           } else if (reorder.date === nextDateStr) {
+             // 해당 날짜의 입고 반영 - 입고 후 재고가 증가하면 판매 추세도 증가
+             currentForecastStock += reorder.quantity;
+             reorderIndex++;
+           } else {
+             // 미래 입고는 나중에 처리
+             break;
+           }
+         }
+         
+         // 입고가 있는 날에는 입고 후 재고를 먼저 표시하고, 그 다음 날부터 판매 반영
+         // 입고가 없는 날에는 판매 진행
+         let dailySales = 0;
+         let stockValue = currentForecastStock;
+         
+         if (!hasReorderToday && currentForecastStock > 0) {
+           // 입고가 없는 날에만 판매 진행
+           // 재고에 따른 동적 판매량 계산
+           // 재고가 많을수록 판매량 증가 (최대 1.5배), 재고가 없으면 판매 없음
+           // 입고 후 재고가 증가하면 판매량도 즉시 증가하는 추세 반영
+           const currentStockRatio = Math.min(1.5, 1 + (currentForecastStock / 100));
+           const calculatedDailySales = baseAverageDailySales * currentStockRatio;
+           
+           // 재고량을 초과하지 않도록 판매량 제한 (재고가 20개면 최대 20개만 판매)
+           dailySales = Math.min(calculatedDailySales, currentForecastStock);
+           
+           // 일일 판매량 차감
+           currentForecastStock -= dailySales;
+           stockValue = currentForecastStock;
+         }
+         // 입고가 있는 날에는 입고 후 재고를 그대로 표시 (판매는 다음 날부터)
+         
+         // Don't show negative stock
+         stockValue = Math.max(0, Math.round(stockValue));
+
+         forecastPoints.push({
+           date: `+${dayOffset}일`,
+           rawDate: nextDateStr,
+           stock: stockValue,
+           type: 'forecast',
+           hasReorder: sortedReorderSchedule.some(r => r.date === nextDateStr),
+           dailySales: dailySales
+         });
+         
+         // 재고가 0이 되고 더 이상 입고가 없으면 종료
+         // 입고가 더 있으면 계속 시뮬레이션 (입고 후 재고 증가 → 판매 재개)
+         if (stockValue === 0 && reorderIndex >= sortedReorderSchedule.length) {
+           hasReachedZero = true;
+           break;
+         }
+         
+         // 재고가 0이 되었지만 입고가 더 있으면 계속 진행
+         // (재고는 0으로 유지, 입고 후 다시 증가하여 판매 재개)
+         
+         dayOffset++;
+      }
+    }
+
+    return [...historyPoints, ...forecastPoints];
+  }, [product]);
+
+  if (!product) {
+    return (
+      <div className="h-full flex items-center justify-center text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+        <p className="text-sm text-center">목록에서 상품을 선택하여<br/>재고 소진 예측 그래프를 확인하세요.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-full p-6 flex flex-col">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+           <h3 className="text-lg font-bold text-gray-900">재고 변동 및 예측</h3>
+           <p className="text-xs text-gray-500 mt-1">과거 재고 추이와 향후 소진 예상선</p>
+        </div>
+        <div className="text-right">
+             <div className="text-xl font-bold text-indigo-600">{product.predictedEmptyDate || '충분'}</div>
+             <div className="text-xs text-gray-500">예상 소진일</div>
+        </div>
+      </div>
+      
+      <div className="flex-1 min-h-0 w-full" style={{ minHeight: '400px' }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 40 }}>
+            <defs>
+              <linearGradient id="colorStock" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.2}/>
+                <stop offset="100%" stopColor="#f43f5e" stopOpacity={0.2}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+            <XAxis 
+              dataKey="date" 
+              tick={{ fontSize: 12, fill: '#6b7280' }} 
+              axisLine={false} 
+              tickLine={false}
+              interval="preserveStartEnd"
+              minTickGap={30}
+              angle={-45}
+              textAnchor="end"
+              height={60}
+            />
+            <YAxis 
+              tick={{ fontSize: 12, fill: '#6b7280' }} 
+              axisLine={false} 
+              tickLine={false}
+              width={60}
+            />
+            <Tooltip 
+              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.1)' }}
+              itemStyle={{ color: '#1f2937', fontSize: '13px', fontWeight: 600 }}
+              labelStyle={{ color: '#6b7280', fontSize: '12px', marginBottom: '4px' }}
+              formatter={(value: number) => [`${value.toLocaleString()}개`, '예상 재고']}
+            />
+            <ReferenceLine x="오늘" stroke="#6366f1" strokeDasharray="3 3" label={{ position: 'top', value: '오늘', fill: '#6366f1', fontSize: 12, fontWeight: 'bold' }} />
+            {/* 입고 일정 표시 */}
+            {product.reorderSchedule && product.reorderSchedule.length > 0 && product.reorderSchedule.map((reorder, idx) => {
+              const reorderDate = new Date(reorder.date + 'T00:00:00');
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const daysDiff = Math.ceil((reorderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+              
+              if (daysDiff > 0) {
+                // 차트 데이터에서 해당 날짜 찾기
+                const chartDate = chartData.find(d => d.rawDate === reorder.date);
+                if (chartDate) {
+                  return (
+                    <ReferenceLine 
+                      key={`reorder-${idx}-${reorder.date}`}
+                      x={chartDate.date}
+                      stroke="#10b981" 
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      label={{ 
+                        position: 'top', 
+                        value: `입고 ${reorder.quantity.toLocaleString()}개`, 
+                        fill: '#10b981', 
+                        fontSize: 11, 
+                        fontWeight: 'bold' 
+                      }} 
+                    />
+                  );
+                }
+              }
+              return null;
+            })}
+            {/* 재고 0 시점 표시 */}
+            {(() => {
+              const zeroPoint = chartData.find((d, idx) => {
+                if (idx === 0) return false;
+                const prev = chartData[idx - 1];
+                return prev.stock > 0 && d.stock === 0 && d.type === 'forecast';
+              });
+              if (zeroPoint) {
+                return (
+                  <ReferenceLine 
+                    x={zeroPoint.date}
+                    stroke="#ef4444" 
+                    strokeWidth={2}
+                    strokeDasharray="3 3"
+                    label={{ 
+                      position: 'top', 
+                      value: '재고 소진', 
+                      fill: '#ef4444', 
+                      fontSize: 12, 
+                      fontWeight: 'bold' 
+                    }} 
+                  />
+                );
+              }
+              return null;
+            })()}
+            <Area 
+              type="monotone" 
+              dataKey="stock" 
+              stroke="#4f46e5" 
+              strokeWidth={2}
+              fill="url(#colorStock)" 
+              animationDuration={1000}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+export default SalesChart;

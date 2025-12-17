@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>재고 예측 대시보드</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    /* Lucide 아이콘 SVG 스타일 */
+    .icon { width: 1em; height: 1em; stroke-width: 2; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // 타입 정의
+    const StockLevel = {
+      SAFE: 'SAFE',
+      WARNING: 'WARNING',
+      CRITICAL: 'CRITICAL',
+      OUT_OF_STOCK: 'OUT_OF_STOCK'
+    };
+
+    // 상수
+    const WAREHOUSE_STOCK = {
+      '07SBD': 116,
+      '07YEL': 21,
+      '43LDL': 0,
+      '43PKL': 59,
+      '50BKS': 66,
+      '50CRS': 53,
+      '50NYS': 372,
+    };
+
+    const REORDER_SCHEDULE = {
+      '50BKS': [
+        { date: '2025-12-17', quantity: 2520 },
+        { date: '2025-12-23', quantity: 6000 },
+        { date: '2026-01-08', quantity: 7000 },
+        { date: '2026-01-15', quantity: 2000 },
+      ],
+      '50CRS': [
+        { date: '2025-12-24', quantity: 6000 },
+        { date: '2026-01-08', quantity: 3000 },
+        { date: '2026-01-15', quantity: 1000 },
+      ],
+      '43PKL': [
+        { date: '2025-12-25', quantity: 1000 },
+      ],
+      '07SBD': [
+        { date: '2025-12-24', quantity: 1000 },
+      ],
+    };
+
+    const extractColorCode = (productName) => {
+      const match = productName.match(/\(([A-Z0-9]+)\)$/);
+      return match ? match[1] : null;
+    };
+
+    // JSON 데이터 (인라인)
+    const ALL_STORES_DATA = {
+      "stores": [{
+        "storeCode": "ALL",
+        "storeName": "전체",
+        "district": "전체",
+        "products": [
+          {"id": "MB_COLOR_43PKL", "name": "3ABNB1156 (43PKL)", "category": "비니", "currentStock": 1221, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 516}]},
+          {"id": "MB_COLOR_50BKS", "name": "3ABNB1156 (50BKS)", "category": "비니", "currentStock": 3687, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 500}]},
+          {"id": "MB_COLOR_50CRS", "name": "3ABNB1156 (50CRS)", "category": "비니", "currentStock": 4093, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 656}]},
+          {"id": "MB_COLOR_50NYS", "name": "3ABNB1156 (50NYS)", "category": "비니", "currentStock": 2040, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 628}]},
+          {"id": "MB_COLOR_07SBD", "name": "3ABNB1156 (07SBD)", "category": "비니", "currentStock": 1703, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 394}]},
+          {"id": "MB_COLOR_07YEL", "name": "3ABNB1156 (07YEL)", "category": "비니", "currentStock": 1094, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 113}]}
+        ]
+      }],
+      "districts": [{
+        "districtName": "전체",
+        "stores": [{
+          "storeCode": "ALL",
+          "storeName": "전체",
+          "district": "전체",
+          "products": [
+            {"id": "MB_COLOR_43PKL", "name": "3ABNB1156 (43PKL)", "category": "비니", "currentStock": 1221, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 516}]},
+            {"id": "MB_COLOR_50BKS", "name": "3ABNB1156 (50BKS)", "category": "비니", "currentStock": 3687, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 500}]},
+            {"id": "MB_COLOR_50CRS", "name": "3ABNB1156 (50CRS)", "category": "비니", "currentStock": 4093, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 656}]},
+            {"id": "MB_COLOR_50NYS", "name": "3ABNB1156 (50NYS)", "category": "비니", "currentStock": 2040, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 628}]},
+            {"id": "MB_COLOR_07SBD", "name": "3ABNB1156 (07SBD)", "category": "비니", "currentStock": 1703, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 394}]},
+            {"id": "MB_COLOR_07YEL", "name": "3ABNB1156 (07YEL)", "category": "비니", "currentStock": 1094, "price": 43000, "salesHistory": [{"date": "1899-12-29", "quantity": 113}]}
+          ]
+        }]
+      }]
+    };
+
+    const MIYAWNG_BINI_DATA = [{"id": "MB_1765843970299_1", "name": "플러시 미야옹 비니 (07SBD)", "category": "비니", "currentStock": 108, "price": 43000, "salesHistory": [{"date": "2025-10-23", "quantity": 81}, {"date": "2025-10-24", "quantity": 71}, {"date": "2025-10-25", "quantity": 111}, {"date": "2025-10-26", "quantity": 10}, {"date": "2025-10-27", "quantity": 7}, {"date": "2025-10-28", "quantity": 14}, {"date": "2025-10-29", "quantity": 11}, {"date": "2025-10-30", "quantity": 19}, {"date": "2025-10-31", "quantity": 83}, {"date": "2025-11-01", "quantity": 68}, {"date": "2025-11-02", "quantity": 12}, {"date": "2025-11-03", "quantity": 25}, {"date": "2025-11-04", "quantity": 19}, {"date": "2025-11-05", "quantity": 13}, {"date": "2025-11-06", "quantity": 11}, {"date": "2025-11-07", "quantity": 14}, {"date": "2025-11-08", "quantity": 4}, {"date": "2025-11-09", "quantity": 3}, {"date": "2025-11-10", "quantity": 5}, {"date": "2025-11-11", "quantity": 1}, {"date": "2025-11-12", "quantity": 2}, {"date": "2025-11-13", "quantity": 2}, {"date": "2025-11-14", "quantity": 2}, {"date": "2025-11-15", "quantity": 2}, {"date": "2025-11-16", "quantity": 0}, {"date": "2025-11-17", "quantity": 0}, {"date": "2025-11-18", "quantity": 1}, {"date": "2025-11-19", "quantity": 3}, {"date": "2025-11-20", "quantity": 1}, {"date": "2025-11-21", "quantity": 3}]}, {"id": "MB_1765843970299_2", "name": "플러시 미야옹 비니 (43PKL)", "category": "비니", "currentStock": 131, "price": 43000, "salesHistory": [{"date": "2025-10-23", "quantity": 25}, {"date": "2025-10-24", "quantity": 95}, {"date": "2025-10-25", "quantity": 10}, {"date": "2025-10-26", "quantity": 3}, {"date": "2025-10-27", "quantity": 14}, {"date": "2025-10-28", "quantity": 13}, {"date": "2025-10-29", "quantity": 9}, {"date": "2025-10-30", "quantity": 4}, {"date": "2025-10-31", "quantity": 127}, {"date": "2025-11-01", "quantity": 51}, {"date": "2025-11-02", "quantity": 10}, {"date": "2025-11-03", "quantity": 20}, {"date": "2025-11-04", "quantity": 28}, {"date": "2025-11-05", "quantity": 8}, {"date": "2025-11-06", "quantity": 13}, {"date": "2025-11-07", "quantity": 18}, {"date": "2025-11-08", "quantity": 8}, {"date": "2025-11-09", "quantity": 9}, {"date": "2025-11-10", "quantity": 10}, {"date": "2025-11-11", "quantity": 22}, {"date": "2025-11-12", "quantity": 3}, {"date": "2025-11-13", "quantity": 2}, {"date": "2025-11-14", "quantity": 15}, {"date": "2025-11-15", "quantity": 8}, {"date": "2025-11-16", "quantity": 1}, {"date": "2025-11-17", "quantity": 4}, {"date": "2025-11-18", "quantity": 5}, {"date": "2025-11-19", "quantity": 2}, {"date": "2025-11-20", "quantity": 12}, {"date": "2025-11-21", "quantity": 12}]}, {"id": "MB_1765843970299_3", "name": "플러시 미야옹 비니 (50BKS)", "category": "비니", "currentStock": -16, "price": 43000, "salesHistory": [{"date": "2025-10-23", "quantity": 145}, {"date": "2025-10-24", "quantity": 294}, {"date": "2025-10-25", "quantity": 226}, {"date": "2025-10-26", "quantity": 54}, {"date": "2025-10-27", "quantity": 119}, {"date": "2025-10-28", "quantity": 84}, {"date": "2025-10-29", "quantity": 127}, {"date": "2025-10-30", "quantity": 65}, {"date": "2025-10-31", "quantity": 502}, {"date": "2025-11-01", "quantity": 41}, {"date": "2025-11-02", "quantity": 1}, {"date": "2025-11-03", "quantity": 4}, {"date": "2025-11-04", "quantity": 8}, {"date": "2025-11-05", "quantity": 0}, {"date": "2025-11-06", "quantity": 0}, {"date": "2025-11-07", "quantity": -1}, {"date": "2025-11-08", "quantity": 1}, {"date": "2025-11-09", "quantity": 0}, {"date": "2025-11-10", "quantity": 0}, {"date": "2025-11-11", "quantity": 0}, {"date": "2025-11-12", "quantity": 0}, {"date": "2025-11-13", "quantity": 0}, {"date": "2025-11-14", "quantity": 0}, {"date": "2025-11-15", "quantity": 0}, {"date": "2025-11-16", "quantity": 0}, {"date": "2025-11-17", "quantity": 0}, {"date": "2025-11-18", "quantity": 0}, {"date": "2025-11-19", "quantity": 0}, {"date": "2025-11-20", "quantity": 120}, {"date": "2025-11-21", "quantity": 122}]}, {"id": "MB_1765843970299_4", "name": "플러시 미야옹 비니 (50CRS)", "category": "비니", "currentStock": 94, "price": 43000, "salesHistory": [{"date": "2025-10-23", "quantity": 111}, {"date": "2025-10-24", "quantity": 79}, {"date": "2025-10-25", "quantity": 189}, {"date": "2025-10-26", "quantity": 18}, {"date": "2025-10-27", "quantity": 44}, {"date": "2025-10-28", "quantity": 28}, {"date": "2025-10-29", "quantity": 31}, {"date": "2025-10-30", "quantity": 107}, {"date": "2025-10-31", "quantity": 351}, {"date": "2025-11-01", "quantity": 81}, {"date": "2025-11-02", "quantity": 1}, {"date": "2025-11-03", "quantity": 27}, {"date": "2025-11-04", "quantity": 27}, {"date": "2025-11-05", "quantity": 0}, {"date": "2025-11-06", "quantity": 0}, {"date": "2025-11-07", "quantity": 0}, {"date": "2025-11-08", "quantity": 0}, {"date": "2025-11-09", "quantity": 0}, {"date": "2025-11-10", "quantity": 0}, {"date": "2025-11-11", "quantity": 0}, {"date": "2025-11-12", "quantity": 0}, {"date": "2025-11-13", "quantity": 0}, {"date": "2025-11-14", "quantity": 0}, {"date": "2025-11-15", "quantity": 0}, {"date": "2025-11-16", "quantity": 0}, {"date": "2025-11-17", "quantity": 0}, {"date": "2025-11-18", "quantity": 0}, {"date": "2025-11-19", "quantity": 0}, {"date": "2025-11-20", "quantity": 180}, {"date": "2025-11-21", "quantity": 124}]}, {"id": "MB_1765843970299_5", "name": "플러시 미야옹 비니 (50NYS)", "category": "비니", "currentStock": 183, "price": 43000, "salesHistory": [{"date": "2025-10-23", "quantity": 116}, {"date": "2025-10-24", "quantity": 8}, {"date": "2025-10-25", "quantity": 54}, {"date": "2025-10-26", "quantity": 5}, {"date": "2025-10-27", "quantity": 4}, {"date": "2025-10-28", "quantity": 89}, {"date": "2025-10-29", "quantity": 4}, {"date": "2025-10-30", "quantity": 15}, {"date": "2025-10-31", "quantity": 80}, {"date": "2025-11-01", "quantity": 9}, {"date": "2025-11-02", "quantity": 2}, {"date": "2025-11-03", "quantity": 11}, {"date": "2025-11-04", "quantity": 6}, {"date": "2025-11-05", "quantity": 2}, {"date": "2025-11-06", "quantity": 4}, {"date": "2025-11-07", "quantity": 2}, {"date": "2025-11-08", "quantity": 3}, {"date": "2025-11-09", "quantity": 5}, {"date": "2025-11-10", "quantity": 0}, {"date": "2025-11-11", "quantity": 0}, {"date": "2025-11-12", "quantity": 0}, {"date": "2025-11-13", "quantity": 0}, {"date": "2025-11-14", "quantity": 0}, {"date": "2025-11-15", "quantity": 0}, {"date": "2025-11-16", "quantity": 0}, {"date": "2025-11-17", "quantity": 0}, {"date": "2025-11-18", "quantity": 0}, {"date": "2025-11-19", "quantity": 0}, {"date": "2025-11-20", "quantity": 1}, {"date": "2025-11-21", "quantity": 3}]}, {"id": "MB_1765843970314_132", "name": "플러시 미야옹 비니 (07YEL)", "category": "비니", "currentStock": 12, "price": 43000, "salesHistory": [{"date": "2025-10-23", "quantity": 0}, {"date": "2025-10-24", "quantity": 0}, {"date": "2025-10-25", "quantity": 0}, {"date": "2025-10-26", "quantity": 0}, {"date": "2025-10-27", "quantity": 0}, {"date": "2025-10-28", "quantity": 0}, {"date": "2025-10-29", "quantity": 0}, {"date": "2025-10-30", "quantity": 0}, {"date": "2025-10-31", "quantity": 0}, {"date": "2025-11-01", "quantity": 0}, {"date": "2025-11-02", "quantity": 0}, {"date": "2025-11-03", "quantity": 0}, {"date": "2025-11-04", "quantity": 0}, {"date": "2025-11-05", "quantity": 0}, {"date": "2025-11-06", "quantity": 0}, {"date": "2025-11-07", "quantity": 0}, {"date": "2025-11-08", "quantity": 0}, {"date": "2025-11-09", "quantity": 0}, {"date": "2025-11-10", "quantity": 0}, {"date": "2025-11-11", "quantity": 0}, {"date": "2025-11-12", "quantity": 0}, {"date": "2025-11-13", "quantity": 0}, {"date": "2025-11-14", "quantity": 0}, {"date": "2025-11-15", "quantity": 0}, {"date": "2025-11-16", "quantity": 0}, {"date": "2025-11-17", "quantity": 0}, {"date": "2025-11-18", "quantity": 0}, {"date": "2025-11-19", "quantity": 0}, {"date": "2025-11-20", "quantity": 0}, {"date": "2025-11-21", "quantity": -1}]}];
+
+    // 유틸리티 함수
+    const aggregateAllStoresData = (storesData, originalProducts) => {
+      const aggregatedMap = new Map();
+      storesData.forEach(store => {
+        store.products.forEach(storeProduct => {
+          const productKey = storeProduct.name;
+          if (!aggregatedMap.has(productKey)) {
+            const originalProduct = originalProducts.find(p => p.name === productKey);
+            const colorCode = extractColorCode(productKey);
+            let reorderSchedule = colorCode ? REORDER_SCHEDULE[colorCode] : (originalProduct?.reorderSchedule || undefined);
+            if (!reorderSchedule && colorCode) {
+              const upperColorCode = colorCode.toUpperCase();
+              if (upperColorCode !== colorCode && REORDER_SCHEDULE[upperColorCode]) {
+                reorderSchedule = REORDER_SCHEDULE[upperColorCode];
+              }
+            }
+            aggregatedMap.set(productKey, {
+              id: originalProduct?.id || storeProduct.id || `MB_${Date.now()}_${productKey}`,
+              name: productKey,
+              category: storeProduct.category || '비니',
+              currentStock: storeProduct.currentStock > 0 ? storeProduct.currentStock : (originalProduct?.currentStock || 0),
+              price: originalProduct?.price || storeProduct.price || 0,
+              salesHistory: [],
+              warehouseStock: originalProduct?.warehouseStock,
+              reorderSchedule: reorderSchedule,
+            });
+          }
+          const aggregatedProduct = aggregatedMap.get(productKey);
+          const salesMap = new Map();
+          aggregatedProduct.salesHistory.forEach(sale => {
+            salesMap.set(sale.date, sale.quantity);
+          });
+          storeProduct.salesHistory.forEach(sale => {
+            const existingQty = salesMap.get(sale.date) || 0;
+            salesMap.set(sale.date, existingQty + sale.quantity);
+          });
+          aggregatedProduct.salesHistory = Array.from(salesMap.entries())
+            .map(([date, quantity]) => ({ date, quantity }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+        });
+      });
+      return Array.from(aggregatedMap.values());
+    };
+
+    // 아이콘 컴포넌트 (간단한 SVG)
+    const LayoutDashboard = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('rect', { x: 3, y: 3, width: 7, height: 9 }), React.createElement('rect', { x: 14, y: 3, width: 7, height: 5 }), React.createElement('rect', { x: 14, y: 12, width: 7, height: 9 }), React.createElement('rect', { x: 3, y: 16, width: 7, height: 5 }));
+    const Package = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('path', { d: 'M12.89 1.45l8 4A2 2 0 0122 7.24v9.53a2 2 0 01-1.11 1.79l-8 4a2 2 0 01-1.78 0l-8-4a2 2 0 01-1.11-1.8V7.24a2 2 0 011.11-1.81l8-4a2 2 0 011.78 0z' }), React.createElement('polyline', { points: '2.32 6.16 12 11 21.68 6.16' }), React.createElement('line', { x1: 12, y1: 22.76, x2: 12, y2: 11 }));
+    const AlertCircle = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('circle', { cx: 12, cy: 12, r: 10 }), React.createElement('line', { x1: 12, y1: 8, x2: 12, y2: 12 }), React.createElement('line', { x1: 12, y1: 16, x2: 12.01, y2: 16 }));
+    const Plus = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('line', { x1: 12, y1: 5, x2: 12, y2: 19 }), React.createElement('line', { x1: 5, y1: 12, x2: 19, y2: 12 }));
+    const Trash2 = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('polyline', { points: '3 6 5 6 21 6' }), React.createElement('path', { d: 'M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2' }));
+    const Upload = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('path', { d: 'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4' }), React.createElement('polyline', { points: '17 8 12 3 7 8' }), React.createElement('line', { x1: 12, y1: 3, x2: 12, y2: 15 }));
+    const X = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('line', { x1: 18, y1: 6, x2: 6, y2: 18 }), React.createElement('line', { x1: 6, y1: 6, x2: 18, y2: 18 }));
+    const CheckCircle2 = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('path', { d: 'M22 11.08V12a10 10 0 11-5.93-9.14' }), React.createElement('polyline', { points: '22 4 12 14.01 9 11.01' }));
+    const AlertTriangle = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('path', { d: 'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z' }), React.createElement('line', { x1: 12, y1: 9, x2: 12, y2: 13 }), React.createElement('line', { x1: 12, y1: 17, x2: 12.01, y2: 17 }));
+    const XCircle = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('circle', { cx: 12, cy: 12, r: 10 }), React.createElement('line', { x1: 15, y1: 9, x2: 9, y2: 15 }), React.createElement('line', { x1: 9, y1: 9, x2: 15, y2: 15 }));
+    const Sparkles = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('path', { d: 'M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83' }));
+    const Loader2 = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24', style: { animation: 'spin 1s linear infinite' } }, React.createElement('circle', { cx: 12, cy: 12, r: 10, stroke: 'currentColor', strokeWidth: 4, fill: 'none', opacity: 0.25 }), React.createElement('path', { fill: 'currentColor', d: 'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z' }));
+    const RefreshCw = ({ className }) => React.createElement('svg', { className, viewBox: '0 0 24 24' }, React.createElement('polyline', { points: '23 4 23 10 17 10' }), React.createElement('polyline', { points: '1 20 1 14 7 14' }), React.createElement('path', { d: 'M3.51 9a9 9 0 0114.85 3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15' }));
+
+    // StockStatusBadge 컴포넌트
+    const StockStatusBadge = ({ status }) => {
+      const config = {
+        [StockLevel.SAFE]: { color: 'bg-emerald-100 text-emerald-800', text: '여유', Icon: CheckCircle2 },
+        [StockLevel.WARNING]: { color: 'bg-amber-100 text-amber-800', text: '주의', Icon: AlertTriangle },
+        [StockLevel.CRITICAL]: { color: 'bg-rose-100 text-rose-800', text: '위험', Icon: AlertCircle },
+        [StockLevel.OUT_OF_STOCK]: { color: 'bg-gray-100 text-gray-800', text: '품절', Icon: XCircle },
+      };
+      const { color, text, Icon } = config[status] || config[StockLevel.SAFE];
+      return React.createElement('span', { className: `inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${color}` },
+        React.createElement(Icon, { className: 'w-3.5 h-3.5' }),
+        text
+      );
+    };
+
+    // InventoryTable 컴포넌트
+    const InventoryTable = ({ products, onSelectProduct, selectedProductId }) => {
+      const sortedProducts = [...products].sort((a, b) => {
+        const priority = { [StockLevel.OUT_OF_STOCK]: 0, [StockLevel.CRITICAL]: 1, [StockLevel.WARNING]: 2, [StockLevel.SAFE]: 3 };
+        return priority[a.status] - priority[b.status] || a.daysUntilEmpty - b.daysUntilEmpty;
+      });
+      const getBarColor = (status) => {
+        switch (status) {
+          case StockLevel.SAFE: return 'bg-emerald-500';
+          case StockLevel.WARNING: return 'bg-amber-500';
+          case StockLevel.CRITICAL: return 'bg-rose-500';
+          case StockLevel.OUT_OF_STOCK: return 'bg-gray-300';
+          default: return 'bg-gray-300';
+        }
+      };
+      return React.createElement('div', { className: 'bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full' },
+        React.createElement('div', { className: 'overflow-x-auto flex-1' },
+          React.createElement('table', { className: 'min-w-full divide-y divide-gray-200' },
+            React.createElement('thead', { className: 'bg-gray-50' },
+              React.createElement('tr', {},
+                React.createElement('th', { scope: 'col', className: 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider' }, '상품명 / 카테고리'),
+                React.createElement('th', { scope: 'col', className: 'px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider' }, '가용재고'),
+                React.createElement('th', { scope: 'col', className: 'px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider' }, '일평균 판매'),
+                React.createElement('th', { scope: 'col', className: 'px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider' }, '예상 소진일 (재고수준)'),
+                React.createElement('th', { scope: 'col', className: 'px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider' }, '상태')
+              )
+            ),
+            React.createElement('tbody', { className: 'bg-white divide-y divide-gray-200' },
+              sortedProducts.map((product) => {
+                const availableStock = product.currentStock;
+                const maxDays = 30;
+                let percentage = 0;
+                if (availableStock > 0 && product.averageDailySales === 0) {
+                  percentage = 100;
+                } else if (product.daysUntilEmpty !== Infinity) {
+                  percentage = Math.min((product.daysUntilEmpty / maxDays) * 100, 100);
+                }
+                return React.createElement('tr', {
+                  key: product.id,
+                  onClick: () => onSelectProduct(product),
+                  className: `cursor-pointer transition-colors hover:bg-gray-50 ${selectedProductId === product.id ? 'bg-indigo-50 hover:bg-indigo-100' : ''}`
+                },
+                  React.createElement('td', { className: 'px-6 py-4 whitespace-nowrap' },
+                    React.createElement('div', { className: 'flex flex-col' },
+                      React.createElement('span', { className: 'text-sm font-medium text-gray-900' }, product.name),
+                      React.createElement('span', { className: 'text-xs text-gray-500' }, product.category)
+                    )
+                  ),
+                  React.createElement('td', { className: 'px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 font-medium' },
+                    availableStock.toLocaleString()
+                  ),
+                  React.createElement('td', { className: 'px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500' },
+                    `${product.averageDailySales.toFixed(1)}개`
+                  ),
+                  React.createElement('td', { className: 'px-6 py-4 whitespace-nowrap text-right' },
+                    React.createElement('div', { className: 'flex flex-col items-end gap-1.5' },
+                      React.createElement('div', { className: 'text-sm text-gray-900 font-medium' },
+                        product.predictedEmptyDate || '-'
+                      ),
+                      product.daysUntilEmpty !== Infinity && availableStock > 0 ? React.createElement('div', { className: 'flex items-center gap-2' },
+                        React.createElement('span', { className: 'text-xs text-gray-500 tabular-nums' },
+                          `${product.daysUntilEmpty.toFixed(0)}일 남음`
+                        ),
+                        React.createElement('div', { className: 'w-20 h-2 bg-gray-100 rounded-full overflow-hidden' },
+                          React.createElement('div', {
+                            className: `h-full rounded-full transition-all duration-500 ${getBarColor(product.status)}`,
+                            style: { width: `${percentage}%` }
+                          })
+                        )
+                      ) : availableStock === 0 ? React.createElement('span', { className: 'text-xs text-red-500 font-medium' }, '재고 없음') : React.createElement('span', { className: 'text-xs text-emerald-600 font-medium' }, '재고 충분')
+                    )
+                  ),
+                  React.createElement('td', { className: 'px-6 py-4 whitespace-nowrap text-center' },
+                    React.createElement(StockStatusBadge, { status: product.status })
+                  )
+                );
+              })
+            )
+          )
+        )
+      );
+    };
+
+    // SalesChart 컴포넌트 (SVG 기반)
+    const SalesChart = ({ product }) => {
+      const chartData = useMemo(() => {
+        if (!product) return [];
+        const sortedHistory = [...product.salesHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const historyPoints = [];
+        const availableStock = product.currentStock;
+        let runningStock = availableStock;
+        historyPoints.push({ date: '오늘', rawDate: new Date().toISOString().split('T')[0], stock: availableStock, type: 'history' });
+        [...sortedHistory].reverse().forEach(sale => {
+          runningStock += sale.quantity;
+          historyPoints.unshift({ date: sale.date.slice(5), rawDate: sale.date, stock: runningStock, type: 'history' });
+        });
+        const forecastPoints = [];
+        const totalSales = product.salesHistory.reduce((acc, curr) => acc + curr.quantity, 0);
+        const days = product.salesHistory.length;
+        const baseAverageDailySales = days > 0 ? totalSales / days : 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+        const sortedReorderSchedule = (product.reorderSchedule || []).filter(r => r.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date));
+        if (baseAverageDailySales > 0 && (availableStock > 0 || sortedReorderSchedule.length > 0)) {
+          let currentForecastStock = availableStock;
+          let dayOffset = 1;
+          let reorderIndex = 0;
+          let hasReachedZero = false;
+          const maxDays = 365;
+          while (dayOffset <= maxDays && !hasReachedZero) {
+            const nextDate = new Date(today);
+            nextDate.setDate(today.getDate() + dayOffset);
+            const nextDateStr = nextDate.toISOString().split('T')[0];
+            const hasReorderToday = sortedReorderSchedule.some(r => r.date === nextDateStr);
+            while (reorderIndex < sortedReorderSchedule.length) {
+              const reorder = sortedReorderSchedule[reorderIndex];
+              if (reorder.date < nextDateStr) {
+                reorderIndex++;
+              } else if (reorder.date === nextDateStr) {
+                currentForecastStock += reorder.quantity;
+                reorderIndex++;
+              } else {
+                break;
+              }
+            }
+            let dailySales = 0;
+            let stockValue = currentForecastStock;
+            if (!hasReorderToday && currentForecastStock > 0) {
+              const currentStockRatio = Math.min(1.5, 1 + (currentForecastStock / 100));
+              const calculatedDailySales = baseAverageDailySales * currentStockRatio;
+              dailySales = Math.min(calculatedDailySales, currentForecastStock);
+              currentForecastStock -= dailySales;
+              stockValue = currentForecastStock;
+            }
+            stockValue = Math.max(0, Math.round(stockValue));
+            forecastPoints.push({ date: `+${dayOffset}일`, rawDate: nextDateStr, stock: stockValue, type: 'forecast', hasReorder: sortedReorderSchedule.some(r => r.date === nextDateStr), dailySales });
+            if (stockValue === 0 && reorderIndex >= sortedReorderSchedule.length) {
+              hasReachedZero = true;
+              break;
+            }
+            dayOffset++;
+          }
+        }
+        return [...historyPoints, ...forecastPoints];
+      }, [product]);
+
+      if (!product) {
+        return React.createElement('div', { className: 'h-full flex items-center justify-center text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200' },
+          React.createElement('p', { className: 'text-sm text-center' }, '목록에서 상품을 선택하여', React.createElement('br'), '재고 소진 예측 그래프를 확인하세요.')
+        );
+      }
+
+      return React.createElement('div', { className: 'w-full h-full p-6 flex flex-col' },
+        React.createElement('div', { className: 'flex items-center justify-between mb-2' },
+          React.createElement('div', {},
+            React.createElement('h3', { className: 'text-lg font-bold text-gray-900' }, '재고 변동 및 예측'),
+            React.createElement('p', { className: 'text-xs text-gray-500 mt-1' }, '과거 재고 추이와 향후 소진 예상선')
+          ),
+          React.createElement('div', { className: 'text-right' },
+            React.createElement('div', { className: 'text-xl font-bold text-indigo-600' }, product.predictedEmptyDate || '충분'),
+            React.createElement('div', { className: 'text-xs text-gray-500' }, '예상 소진일')
+          )
+        ),
+        React.createElement('div', { className: 'flex-1 min-h-0 w-full', style: { minHeight: '400px' } },
+          (() => {
+            if (chartData.length === 0) {
+              return React.createElement('div', { className: 'h-full flex items-center justify-center text-gray-400' }, '데이터가 없습니다.');
+            }
+            const width = 800;
+            const height = 400;
+            const padding = { top: 20, right: 30, bottom: 60, left: 60 };
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+            const maxStock = Math.max(...chartData.map(d => d.stock), 1);
+            const minStock = Math.min(...chartData.map(d => d.stock), 0);
+            const stockRange = maxStock - minStock || 1;
+            const todayIndex = chartData.findIndex(d => d.date === '오늘');
+            const getX = (index) => padding.left + (index / (chartData.length - 1)) * chartWidth;
+            const getY = (stock) => padding.top + chartHeight - ((stock - minStock) / stockRange) * chartHeight;
+            const points = chartData.map((d, i) => `${getX(i)},${getY(d.stock)}`).join(' ');
+            const areaPoints = `${padding.left},${padding.top + chartHeight} ${points} ${padding.left + chartWidth},${padding.top + chartHeight}`;
+            return React.createElement('svg', { width: '100%', height: '100%', viewBox: `0 0 ${width} ${height}`, style: { maxHeight: '400px' } },
+              React.createElement('defs', {},
+                React.createElement('linearGradient', { id: 'colorStock', x1: '0%', y1: '0%', x2: '0%', y2: '100%' },
+                  React.createElement('stop', { offset: '0%', stopColor: '#4f46e5', stopOpacity: 0.3 }),
+                  React.createElement('stop', { offset: '100%', stopColor: '#f43f5e', stopOpacity: 0.1 })
+                )
+              ),
+              React.createElement('g', {},
+                chartData.map((d, i) => {
+                  if (i % Math.ceil(chartData.length / 10) !== 0 && i !== chartData.length - 1) return null;
+                  const x = getX(i);
+                  return React.createElement('g', { key: i },
+                    React.createElement('line', { x1: x, y1: padding.top, x2: x, y2: padding.top + chartHeight, stroke: '#f3f4f6', strokeDasharray: '3 3', strokeWidth: 1 }),
+                    React.createElement('text', { x: x, y: padding.top + chartHeight + 20, textAnchor: 'middle', fontSize: '10', fill: '#6b7280', transform: `rotate(-45 ${x} ${padding.top + chartHeight + 20})` }, d.date.length > 8 ? d.date.substring(0, 8) : d.date)
+                  );
+                })
+              ),
+              React.createElement('g', {},
+                [0, 0.25, 0.5, 0.75, 1].map(ratio => {
+                  const y = padding.top + chartHeight - ratio * chartHeight;
+                  const value = Math.round(minStock + ratio * stockRange);
+                  return React.createElement('g', { key: ratio },
+                    React.createElement('line', { x1: padding.left, y1: y, x2: padding.left + chartWidth, y2: y, stroke: '#f3f4f6', strokeDasharray: '3 3', strokeWidth: 1 }),
+                    React.createElement('text', { x: padding.left - 10, y: y + 4, textAnchor: 'end', fontSize: '10', fill: '#6b7280' }, value.toLocaleString())
+                  );
+                })
+              ),
+              React.createElement('polygon', { points: areaPoints, fill: 'url(#colorStock)', stroke: 'none' }),
+              React.createElement('polyline', { points: points, fill: 'none', stroke: '#4f46e5', strokeWidth: 2 }),
+              todayIndex >= 0 && React.createElement('line', { x1: getX(todayIndex), y1: padding.top, x2: getX(todayIndex), y2: padding.top + chartHeight, stroke: '#6366f1', strokeDasharray: '3 3', strokeWidth: 2 }),
+              chartData.map((d, i) => {
+                if (d.hasReorder) {
+                  const x = getX(i);
+                  const y = getY(d.stock);
+                  return React.createElement('g', { key: `reorder-${i}` },
+                    React.createElement('circle', { cx: x, cy: y, r: 4, fill: '#10b981', stroke: 'white', strokeWidth: 2 }),
+                    React.createElement('text', { x: x, y: y - 10, textAnchor: 'middle', fontSize: '9', fill: '#10b981', fontWeight: 'bold' }, '입고')
+                  );
+                }
+                return null;
+              })
+            );
+          })()
+        )
+      );
+    };
+
+    // AIAnalysis 컴포넌트 (간소화 - API 없이)
+    const AIAnalysis = ({ products }) => {
+      const [analysis, setAnalysis] = useState('');
+      const handleAnalyze = () => {
+        if (products.length === 0) {
+          setAnalysis('⚠️ 분석할 상품 데이터가 없습니다.');
+          return;
+        }
+        const critical = products.filter(p => p.status === StockLevel.CRITICAL || p.status === StockLevel.OUT_OF_STOCK);
+        const warning = products.filter(p => p.status === StockLevel.WARNING);
+        let report = '# 재고 분석 리포트\n\n';
+        if (critical.length > 0) {
+          report += `## ⚠️ 긴급 조치 필요 (${critical.length}개)\n\n`;
+          critical.forEach(p => {
+            report += `- **${p.name}**: 재고 ${p.currentStock}개, ${p.daysUntilEmpty === Infinity ? '재고 충분' : `${p.daysUntilEmpty}일 후 소진 예상`}\n`;
+          });
+          report += '\n';
+        }
+        if (warning.length > 0) {
+          report += `## ⚠️ 주의 필요 (${warning.length}개)\n\n`;
+          warning.forEach(p => {
+            report += `- **${p.name}**: 재고 ${p.currentStock}개, ${p.daysUntilEmpty}일 후 소진 예상\n`;
+          });
+          report += '\n';
+        }
+        const topSellers = [...products].sort((a, b) => b.averageDailySales - a.averageDailySales).slice(0, 3);
+        report += `## 📈 판매량 상위 3개\n\n`;
+        topSellers.forEach((p, i) => {
+          report += `${i + 1}. **${p.name}**: 일평균 ${p.averageDailySales.toFixed(1)}개\n`;
+        });
+        setAnalysis(report);
+      };
+      return React.createElement('div', { className: 'bg-white rounded-xl shadow-sm border border-indigo-100 p-6 flex flex-col h-full' },
+        React.createElement('div', { className: 'flex items-center justify-between mb-4' },
+          React.createElement('div', { className: 'flex items-center gap-2' },
+            React.createElement('div', { className: 'p-2 bg-indigo-50 rounded-lg' },
+              React.createElement(Sparkles, { className: 'w-5 h-5 text-indigo-600' })
+            ),
+            React.createElement('h2', { className: 'text-lg font-semibold text-gray-900' }, '재고 분석')
+          ),
+          React.createElement('button', {
+            onClick: handleAnalyze,
+            className: 'flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs font-medium'
+          }, React.createElement(RefreshCw, { className: 'w-3.5 h-3.5' }), analysis ? '재분석' : '분석 실행')
+        ),
+        React.createElement('div', { className: 'flex-1 min-h-[120px]' },
+          !analysis ? React.createElement('div', { className: 'h-full flex items-center justify-center text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200 p-4' },
+            React.createElement('p', { className: 'text-xs text-center' }, '전체 재고 데이터를 분석하여', React.createElement('br'), '최적화 리포트를 생성합니다.')
+          ) : React.createElement('div', { className: 'prose prose-sm max-w-none text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-200 h-full overflow-y-auto text-sm' },
+            React.createElement('div', { className: 'whitespace-pre-wrap font-sans leading-relaxed' }, analysis)
+          )
+        )
+      );
+    };
+
+    // AddProductModal 컴포넌트
+    const AddProductModal = ({ isOpen, onClose, onAdd }) => {
+      const [formData, setFormData] = useState({ name: '', category: '기타', currentStock: 0, price: 0, avgDailySales: 0 });
+      if (!isOpen) return null;
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        onAdd(formData);
+        onClose();
+        setFormData({ name: '', category: '기타', currentStock: 0, price: 0, avgDailySales: 0 });
+      };
+      const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: name === 'name' || name === 'category' ? value : Number(value) }));
+      };
+      return React.createElement('div', { className: 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4' },
+        React.createElement('div', { className: 'bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden' },
+          React.createElement('div', { className: 'flex items-center justify-between p-4 border-b border-gray-100' },
+            React.createElement('h3', { className: 'text-lg font-semibold text-gray-900' }, '새 상품 등록'),
+            React.createElement('button', { onClick: onClose, className: 'text-gray-400 hover:text-gray-500' },
+              React.createElement(X, { className: 'w-5 h-5' })
+            )
+          ),
+          React.createElement('form', { onSubmit: handleSubmit, className: 'p-6 space-y-4' },
+            React.createElement('div', {},
+              React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '상품명'),
+              React.createElement('input', { type: 'text', name: 'name', required, className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all', placeholder: '예: 아이스 아메리카노', value: formData.name, onChange: handleChange })
+            ),
+            React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+              React.createElement('div', {},
+                React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '카테고리'),
+                React.createElement('select', { name: 'category', className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white', value: formData.category, onChange: handleChange },
+                  React.createElement('option', { value: '식품' }, '식품'),
+                  React.createElement('option', { value: '주방용품' }, '주방용품'),
+                  React.createElement('option', { value: '전자제품' }, '전자제품'),
+                  React.createElement('option', { value: '의류' }, '의류'),
+                  React.createElement('option', { value: '사무용품' }, '사무용품'),
+                  React.createElement('option', { value: '기타' }, '기타')
+                )
+              ),
+              React.createElement('div', {},
+                React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '판매 단가 (원)'),
+                React.createElement('input', { type: 'number', name: 'price', min: '0', className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none', value: formData.price, onChange: handleChange })
+              )
+            ),
+            React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+              React.createElement('div', {},
+                React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '현재 재고량'),
+                React.createElement('input', { type: 'number', name: 'currentStock', min: '0', required, className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none', value: formData.currentStock, onChange: handleChange })
+              ),
+              React.createElement('div', {},
+                React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '일평균 판매(예상)'),
+                React.createElement('input', { type: 'number', name: 'avgDailySales', min: '0', required, className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none', value: formData.avgDailySales, onChange: handleChange }),
+                React.createElement('p', { className: 'text-xs text-gray-400 mt-1' }, '※ 과거 판매 이력이 자동 생성됩니다.')
+              )
+            ),
+            React.createElement('div', { className: 'pt-4 flex gap-3' },
+              React.createElement('button', { type: 'button', onClick: onClose, className: 'flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium' }, '취소'),
+              React.createElement('button', { type: 'submit', className: 'flex-1 px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors font-medium' }, '등록하기')
+            )
+          )
+        )
+      );
+    };
+
+    // 메인 App 컴포넌트
+    const App = () => {
+      const [products, setProducts] = useState([]);
+      const [isLoadingData, setIsLoadingData] = useState(true);
+      const [allStoresData, setAllStoresData] = useState([]);
+      const [districtsData, setDistrictsData] = useState([]);
+      const [originalProducts, setOriginalProducts] = useState([]);
+      const [selectedProductId, setSelectedProductId] = useState(null);
+      const [isModalOpen, setIsModalOpen] = useState(false);
+
+      useEffect(() => {
+        const loadData = async () => {
+          try {
+            let originalProductsData = MIYAWNG_BINI_DATA.map((item) => {
+              const colorCode = extractColorCode(item.name);
+              const warehouseStock = colorCode ? WAREHOUSE_STOCK[colorCode] : undefined;
+              const reorderSchedule = colorCode ? REORDER_SCHEDULE[colorCode] : undefined;
+              return { ...item, salesHistory: item.salesHistory || [], warehouseStock, reorderSchedule };
+            });
+            setOriginalProducts(originalProductsData);
+            const storesData = ALL_STORES_DATA.stores || [];
+            const districts = ALL_STORES_DATA.districts || [];
+            setAllStoresData(storesData);
+            setDistrictsData(districts);
+            const aggregatedProducts = aggregateAllStoresData(storesData, originalProductsData);
+            setProducts(aggregatedProducts);
+          } catch (error) {
+            console.error('Error loading data:', error);
+            setProducts([]);
+          } finally {
+            setIsLoadingData(false);
+          }
+        };
+        loadData();
+      }, []);
+
+      const generateSyntheticHistory = (avgSales) => {
+        const history = [];
+        const today = new Date();
+        for (let i = 29; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const variance = Math.max(1, Math.floor(avgSales * 0.3));
+          const quantity = Math.max(0, Math.floor(avgSales + (Math.random() * variance * 2 - variance)));
+          history.push({ date: date.toISOString().split('T')[0], quantity });
+        }
+        return history;
+      };
+
+      const handleAddProduct = (data) => {
+        const newProduct = {
+          id: `P${Date.now()}`,
+          name: data.name,
+          category: data.category,
+          currentStock: data.currentStock,
+          price: data.price,
+          salesHistory: generateSyntheticHistory(data.avgDailySales)
+        };
+        setProducts(prev => [newProduct, ...prev]);
+      };
+
+      const handleDeleteProduct = (id) => {
+        if (window.confirm('정말 이 상품을 삭제하시겠습니까?')) {
+          setProducts(prev => prev.filter(p => p.id !== id));
+          if (selectedProductId === id) setSelectedProductId(null);
+        }
+      };
+
+      const handleClearAll = () => {
+        if (window.confirm('모든 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+          setProducts([]);
+          setSelectedProductId(null);
+        }
+      };
+
+      const forecastData = useMemo(() => {
+        return products.map(product => {
+          const totalSales = product.salesHistory.reduce((acc, curr) => acc + curr.quantity, 0);
+          const days = product.salesHistory.length;
+          const averageDailySales = days > 0 ? totalSales / days : 0;
+          const availableStock = product.currentStock;
+          let predictedEmptyDate = null;
+          let daysUntilEmpty = Infinity;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const todayStr = today.toISOString().split('T')[0];
+          const sortedReorderSchedule = (product.reorderSchedule || []).filter(r => r.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date));
+          if (averageDailySales > 0) {
+            const firstReorderDate = sortedReorderSchedule.length > 0 ? sortedReorderSchedule[0].date : null;
+            let stockBeforeReorder = availableStock;
+            let willRunOutBeforeReorder = false;
+            if (firstReorderDate && availableStock > 0) {
+              const firstReorderDateObj = new Date(firstReorderDate);
+              const daysUntilFirstReorder = Math.ceil((firstReorderDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+              for (let d = 1; d <= daysUntilFirstReorder && stockBeforeReorder > 0; d++) {
+                let dailySales = 0;
+                if (stockBeforeReorder > 0) {
+                  const stockRatio = Math.min(1.5, 1 + (stockBeforeReorder / 100));
+                  const calculatedDailySales = averageDailySales * stockRatio;
+                  dailySales = Math.min(calculatedDailySales, stockBeforeReorder);
+                  stockBeforeReorder -= dailySales;
+                }
+              }
+              willRunOutBeforeReorder = stockBeforeReorder <= 0;
+            }
+            let currentStock = willRunOutBeforeReorder && firstReorderDate ? 0 : availableStock;
+            let dayOffset = 1;
+            let reorderIndex = 0;
+            const maxDays = 365;
+            let hasFoundEmptyDate = false;
+            while (dayOffset <= maxDays && !hasFoundEmptyDate) {
+              const nextDate = new Date(today);
+              nextDate.setDate(today.getDate() + dayOffset);
+              const nextDateStr = nextDate.toISOString().split('T')[0];
+              while (reorderIndex < sortedReorderSchedule.length && sortedReorderSchedule[reorderIndex].date <= nextDateStr) {
+                const reorder = sortedReorderSchedule[reorderIndex];
+                if (willRunOutBeforeReorder && reorder.date === firstReorderDate) {
+                  currentStock = reorder.quantity;
+                } else {
+                  currentStock += reorder.quantity;
+                }
+                reorderIndex++;
+              }
+              let dailySales = 0;
+              if (currentStock > 0) {
+                const currentStockRatio = Math.min(1.5, 1 + (currentStock / 100));
+                const calculatedDailySales = averageDailySales * currentStockRatio;
+                dailySales = Math.min(calculatedDailySales, currentStock);
+                currentStock -= dailySales;
+              }
+              if (currentStock <= 0) {
+                const hasMoreReorder = reorderIndex < sortedReorderSchedule.length;
+                if (!hasMoreReorder) {
+                  daysUntilEmpty = dayOffset;
+                  predictedEmptyDate = nextDateStr;
+                  hasFoundEmptyDate = true;
+                  break;
+                }
+                currentStock = 0;
+              }
+              dayOffset++;
+            }
+          } else if (availableStock === 0 && sortedReorderSchedule.length === 0) {
+            daysUntilEmpty = 0;
+            predictedEmptyDate = todayStr;
+          }
+          let status = StockLevel.SAFE;
+          if (availableStock === 0) {
+            status = StockLevel.OUT_OF_STOCK;
+          } else if (daysUntilEmpty <= 3) {
+            status = StockLevel.CRITICAL;
+          } else if (daysUntilEmpty <= 7) {
+            status = StockLevel.WARNING;
+          }
+          return { ...product, averageDailySales, daysUntilEmpty, predictedEmptyDate, status };
+        });
+      }, [products]);
+
+      const selectedProduct = useMemo(() => forecastData.find(p => p.id === selectedProductId) || null, [forecastData, selectedProductId]);
+
+      const stats = useMemo(() => ({
+        totalProducts: forecastData.length,
+        lowStock: forecastData.filter(p => p.status === StockLevel.WARNING || p.status === StockLevel.CRITICAL).length,
+        critical: forecastData.filter(p => p.status === StockLevel.CRITICAL || p.status === StockLevel.OUT_OF_STOCK).length
+      }), [forecastData]);
+
+      return React.createElement('div', { className: 'min-h-screen bg-gray-50 flex flex-col' },
+        React.createElement('header', { className: 'bg-white border-b border-gray-200 sticky top-0 z-10' },
+          React.createElement('div', { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' },
+            React.createElement('div', { className: 'flex justify-between h-16' },
+              React.createElement('div', { className: 'flex items-center' },
+                React.createElement(LayoutDashboard, { className: 'h-6 w-6 text-indigo-600 mr-3' }),
+                React.createElement('h1', { className: 'text-xl font-bold text-gray-900 hidden sm:block' }, '재고 예측 대시보드'),
+                React.createElement('h1', { className: 'text-xl font-bold text-gray-900 sm:hidden' }, '재고 예측')
+              ),
+              React.createElement('div', { className: 'flex items-center gap-2' },
+                products.length > 0 && React.createElement(React.Fragment, {},
+                  React.createElement('button', { onClick: handleClearAll, className: 'px-3 py-2 text-sm text-gray-500 hover:text-red-600 transition-colors' }, '초기화'),
+                  React.createElement('button', {
+                    onClick: () => {
+                      const loadedProducts = MIYAWNG_BINI_DATA.map((item) => {
+                        const colorCode = extractColorCode(item.name);
+                        const warehouseStock = colorCode ? WAREHOUSE_STOCK[colorCode] : undefined;
+                        const reorderSchedule = colorCode ? REORDER_SCHEDULE[colorCode] : undefined;
+                        return { ...item, salesHistory: item.salesHistory || [], warehouseStock, reorderSchedule };
+                      });
+                      setProducts(loadedProducts);
+                    },
+                    className: 'px-3 py-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors flex items-center gap-1',
+                    title: '미야옹비니 데이터 다시 로드'
+                  }, React.createElement(Upload, { className: 'w-4 h-4' }), React.createElement('span', { className: 'hidden sm:inline' }, '데이터 재로드'))
+                ),
+                React.createElement('button', {
+                  onClick: () => setIsModalOpen(true),
+                  className: 'flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm'
+                }, React.createElement(Plus, { className: 'w-4 h-4' }), React.createElement('span', { className: 'hidden sm:inline' }, '상품 등록'), React.createElement('span', { className: 'sm:hidden' }, '등록'))
+              )
+            )
+          )
+        ),
+        React.createElement('main', { className: 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full' },
+          isLoadingData ? React.createElement('div', { className: 'text-center py-8 text-gray-500' }, '데이터 로딩 중...') : React.createElement(React.Fragment, {},
+            React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6 mb-8' },
+              React.createElement('div', { className: 'bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center' },
+                React.createElement('div', { className: 'p-3 rounded-full bg-blue-100 mr-4' },
+                  React.createElement(Package, { className: 'h-6 w-6 text-blue-600' })
+                ),
+                React.createElement('div', {},
+                  React.createElement('p', { className: 'text-sm font-medium text-gray-500' }, '총 관리 상품'),
+                  React.createElement('p', { className: 'text-2xl font-bold text-gray-900' }, `${stats.totalProducts}개`)
+                )
+              ),
+              React.createElement('div', { className: 'bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center' },
+                React.createElement('div', { className: 'p-3 rounded-full bg-amber-100 mr-4' },
+                  React.createElement(AlertCircle, { className: 'h-6 w-6 text-amber-600' })
+                ),
+                React.createElement('div', {},
+                  React.createElement('p', { className: 'text-sm font-medium text-gray-500' }, '재고 부족 주의'),
+                  React.createElement('p', { className: 'text-2xl font-bold text-amber-600' }, `${stats.lowStock}개`)
+                )
+              ),
+              React.createElement('div', { className: 'bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center' },
+                React.createElement('div', { className: 'p-3 rounded-full bg-rose-100 mr-4' },
+                  React.createElement(AlertCircle, { className: 'h-6 w-6 text-rose-600' })
+                ),
+                React.createElement('div', {},
+                  React.createElement('p', { className: 'text-sm font-medium text-gray-500' }, '품절 임박/위험'),
+                  React.createElement('p', { className: 'text-2xl font-bold text-rose-600' }, `${stats.critical}개`)
+                )
+              )
+            ),
+            products.length === 0 ? React.createElement('div', { className: 'bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-12 text-center' },
+              React.createElement(Package, { className: 'w-12 h-12 text-gray-300 mx-auto mb-4' }),
+              React.createElement('h3', { className: 'text-lg font-medium text-gray-900 mb-2' }, '등록된 상품이 없습니다'),
+              React.createElement('p', { className: 'text-gray-500 mb-6' }, '새로운 상품을 등록하여 재고 관리를 시작해보세요.'),
+              React.createElement('button', {
+                onClick: () => setIsModalOpen(true),
+                className: 'inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm'
+              }, React.createElement(Plus, { className: 'w-5 h-5' }), '첫 상품 등록하기')
+            ) : React.createElement('div', { className: 'grid grid-cols-1 lg:grid-cols-3 gap-8' },
+              React.createElement('div', { className: 'lg:col-span-2 flex flex-col gap-6' },
+                React.createElement('div', { className: 'flex items-center justify-between' },
+                  React.createElement('h2', { className: 'text-lg font-semibold text-gray-900' }, '재고 현황 및 예측')
+                ),
+                React.createElement('div', { className: 'flex-1 min-h-[500px]' },
+                  React.createElement(InventoryTable, {
+                    products: forecastData,
+                    onSelectProduct: (p) => setSelectedProductId(p.id),
+                    selectedProductId: selectedProductId
+                  })
+                )
+              ),
+              React.createElement('div', { className: 'flex flex-col gap-6' },
+                React.createElement('div', { className: 'bg-white rounded-xl shadow-sm border border-gray-200 p-1 min-h-[500px] relative' },
+                  selectedProductId && React.createElement('button', {
+                    onClick: () => handleDeleteProduct(selectedProductId),
+                    className: 'absolute top-4 right-4 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors z-10',
+                    title: '이 상품 삭제'
+                  }, React.createElement(Trash2, { className: 'w-4 h-4' })),
+                  React.createElement(SalesChart, { product: selectedProduct })
+                ),
+                selectedProduct && React.createElement('div', { className: 'bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-xs text-gray-600' },
+                  React.createElement('div', { className: 'font-semibold text-gray-700 mb-2' }, '📊 소진 예측 계산 로직'),
+                  React.createElement('div', { className: 'space-y-1' },
+                    React.createElement('div', {}, '• ', React.createElement('strong', {}, '기본 일평균 판매량:'), ' 과거 판매 이력의 평균값'),
+                    React.createElement('div', {}, '• ', React.createElement('strong', {}, '동적 판매량 조정:'), ' 재고가 많을수록 판매량 증가 (최대 1.5배), 재고 부족 시 감소 (0.3배)'),
+                    React.createElement('div', {}, '• ', React.createElement('strong', {}, '일일 재고 변화:'), ' 전일 재고 + 입고량 - 일일 판매량'),
+                    React.createElement('div', {}, '• ', React.createElement('strong', {}, '입고 일정 반영:'), ' 예정된 입고 일정에 따라 재고 증가'),
+                    React.createElement('div', {}, '• ', React.createElement('strong', {}, '소진일 계산:'), ' 입고 일정과 동적 판매량을 반영하여 재고가 0이 되는 시점 계산'),
+                    selectedProduct.reorderSchedule && selectedProduct.reorderSchedule.length > 0 && React.createElement('div', { className: 'mt-2 pt-2 border-t border-gray-300' },
+                      React.createElement('div', { className: 'font-semibold text-gray-700' }, '📦 입고 일정:'),
+                      selectedProduct.reorderSchedule.map((reorder, idx) =>
+                        React.createElement('div', { key: idx, className: 'ml-2' }, `${reorder.date}: +${reorder.quantity.toLocaleString()}개`)
+                      )
+                    )
+                  )
+                ),
+                React.createElement(AIAnalysis, { products: forecastData })
+              )
+            )
+          )
+        ),
+        React.createElement(AddProductModal, {
+          isOpen: isModalOpen,
+          onClose: () => setIsModalOpen(false),
+          onAdd: handleAddProduct
+        })
+      );
+    };
+
+    // 렌더링
+    const renderApp = () => {
+      try {
+        console.log('앱 렌더링 시작...');
+        // React 18 방식 시도
+        if (ReactDOM.createRoot) {
+          const root = ReactDOM.createRoot(document.getElementById('root'));
+          root.render(React.createElement(App));
+          console.log('React 18 방식으로 렌더링 완료');
+        } else {
+          // React 17 방식 (fallback)
+          ReactDOM.render(React.createElement(App), document.getElementById('root'));
+          console.log('React 17 방식으로 렌더링 완료');
+        }
+      } catch (error) {
+        console.error('렌더링 오류:', error);
+        document.getElementById('root').innerHTML = `
+          <div style="padding: 20px; text-align: center; font-family: sans-serif;">
+            <h2 style="color: #ef4444;">오류가 발생했습니다</h2>
+            <p>브라우저 콘솔(F12)을 열어 오류를 확인해주세요.</p>
+            <pre style="text-align: left; background: #f5f5f5; padding: 10px; margin-top: 10px; border-radius: 4px;">${error.toString()}\n${error.stack || ''}</pre>
+          </div>
+        `;
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', renderApp);
+    } else {
+      renderApp();
+    }
+  </script>
+</body>
+</html>

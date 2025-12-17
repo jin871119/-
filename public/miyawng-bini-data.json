@@ -1,0 +1,776 @@
+[
+  {
+    "id": "MB_1765843970299_1",
+    "name": "플러시 미야옹 비니 (07SBD)",
+    "category": "비니",
+    "currentStock": 108,
+    "price": 43000,
+    "salesHistory": [
+      {
+        "date": "2025-10-23",
+        "quantity": 81
+      },
+      {
+        "date": "2025-10-24",
+        "quantity": 71
+      },
+      {
+        "date": "2025-10-25",
+        "quantity": 111
+      },
+      {
+        "date": "2025-10-26",
+        "quantity": 10
+      },
+      {
+        "date": "2025-10-27",
+        "quantity": 7
+      },
+      {
+        "date": "2025-10-28",
+        "quantity": 14
+      },
+      {
+        "date": "2025-10-29",
+        "quantity": 11
+      },
+      {
+        "date": "2025-10-30",
+        "quantity": 19
+      },
+      {
+        "date": "2025-10-31",
+        "quantity": 83
+      },
+      {
+        "date": "2025-11-01",
+        "quantity": 68
+      },
+      {
+        "date": "2025-11-02",
+        "quantity": 12
+      },
+      {
+        "date": "2025-11-03",
+        "quantity": 25
+      },
+      {
+        "date": "2025-11-04",
+        "quantity": 19
+      },
+      {
+        "date": "2025-11-05",
+        "quantity": 13
+      },
+      {
+        "date": "2025-11-06",
+        "quantity": 11
+      },
+      {
+        "date": "2025-11-07",
+        "quantity": 14
+      },
+      {
+        "date": "2025-11-08",
+        "quantity": 4
+      },
+      {
+        "date": "2025-11-09",
+        "quantity": 3
+      },
+      {
+        "date": "2025-11-10",
+        "quantity": 5
+      },
+      {
+        "date": "2025-11-11",
+        "quantity": 1
+      },
+      {
+        "date": "2025-11-12",
+        "quantity": 2
+      },
+      {
+        "date": "2025-11-13",
+        "quantity": 2
+      },
+      {
+        "date": "2025-11-14",
+        "quantity": 2
+      },
+      {
+        "date": "2025-11-15",
+        "quantity": 2
+      },
+      {
+        "date": "2025-11-16",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-17",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-18",
+        "quantity": 1
+      },
+      {
+        "date": "2025-11-19",
+        "quantity": 3
+      },
+      {
+        "date": "2025-11-20",
+        "quantity": 1
+      },
+      {
+        "date": "2025-11-21",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "id": "MB_1765843970299_2",
+    "name": "플러시 미야옹 비니 (43PKL)",
+    "category": "비니",
+    "currentStock": 131,
+    "price": 43000,
+    "salesHistory": [
+      {
+        "date": "2025-10-23",
+        "quantity": 25
+      },
+      {
+        "date": "2025-10-24",
+        "quantity": 95
+      },
+      {
+        "date": "2025-10-25",
+        "quantity": 10
+      },
+      {
+        "date": "2025-10-26",
+        "quantity": 3
+      },
+      {
+        "date": "2025-10-27",
+        "quantity": 14
+      },
+      {
+        "date": "2025-10-28",
+        "quantity": 13
+      },
+      {
+        "date": "2025-10-29",
+        "quantity": 9
+      },
+      {
+        "date": "2025-10-30",
+        "quantity": 4
+      },
+      {
+        "date": "2025-10-31",
+        "quantity": 127
+      },
+      {
+        "date": "2025-11-01",
+        "quantity": 51
+      },
+      {
+        "date": "2025-11-02",
+        "quantity": 10
+      },
+      {
+        "date": "2025-11-03",
+        "quantity": 20
+      },
+      {
+        "date": "2025-11-04",
+        "quantity": 28
+      },
+      {
+        "date": "2025-11-05",
+        "quantity": 8
+      },
+      {
+        "date": "2025-11-06",
+        "quantity": 13
+      },
+      {
+        "date": "2025-11-07",
+        "quantity": 18
+      },
+      {
+        "date": "2025-11-08",
+        "quantity": 8
+      },
+      {
+        "date": "2025-11-09",
+        "quantity": 9
+      },
+      {
+        "date": "2025-11-10",
+        "quantity": 10
+      },
+      {
+        "date": "2025-11-11",
+        "quantity": 22
+      },
+      {
+        "date": "2025-11-12",
+        "quantity": 3
+      },
+      {
+        "date": "2025-11-13",
+        "quantity": 2
+      },
+      {
+        "date": "2025-11-14",
+        "quantity": 15
+      },
+      {
+        "date": "2025-11-15",
+        "quantity": 8
+      },
+      {
+        "date": "2025-11-16",
+        "quantity": 1
+      },
+      {
+        "date": "2025-11-17",
+        "quantity": 4
+      },
+      {
+        "date": "2025-11-18",
+        "quantity": 5
+      },
+      {
+        "date": "2025-11-19",
+        "quantity": 2
+      },
+      {
+        "date": "2025-11-20",
+        "quantity": 12
+      },
+      {
+        "date": "2025-11-21",
+        "quantity": 12
+      }
+    ]
+  },
+  {
+    "id": "MB_1765843970299_3",
+    "name": "플러시 미야옹 비니 (50BKS)",
+    "category": "비니",
+    "currentStock": -16,
+    "price": 43000,
+    "salesHistory": [
+      {
+        "date": "2025-10-23",
+        "quantity": 145
+      },
+      {
+        "date": "2025-10-24",
+        "quantity": 294
+      },
+      {
+        "date": "2025-10-25",
+        "quantity": 226
+      },
+      {
+        "date": "2025-10-26",
+        "quantity": 54
+      },
+      {
+        "date": "2025-10-27",
+        "quantity": 119
+      },
+      {
+        "date": "2025-10-28",
+        "quantity": 84
+      },
+      {
+        "date": "2025-10-29",
+        "quantity": 127
+      },
+      {
+        "date": "2025-10-30",
+        "quantity": 65
+      },
+      {
+        "date": "2025-10-31",
+        "quantity": 502
+      },
+      {
+        "date": "2025-11-01",
+        "quantity": 41
+      },
+      {
+        "date": "2025-11-02",
+        "quantity": 1
+      },
+      {
+        "date": "2025-11-03",
+        "quantity": 4
+      },
+      {
+        "date": "2025-11-04",
+        "quantity": 8
+      },
+      {
+        "date": "2025-11-05",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-06",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-07",
+        "quantity": -1
+      },
+      {
+        "date": "2025-11-08",
+        "quantity": 1
+      },
+      {
+        "date": "2025-11-09",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-10",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-11",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-12",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-13",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-14",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-15",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-16",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-17",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-18",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-19",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-20",
+        "quantity": 120
+      },
+      {
+        "date": "2025-11-21",
+        "quantity": 122
+      }
+    ]
+  },
+  {
+    "id": "MB_1765843970299_4",
+    "name": "플러시 미야옹 비니 (50CRS)",
+    "category": "비니",
+    "currentStock": 94,
+    "price": 43000,
+    "salesHistory": [
+      {
+        "date": "2025-10-23",
+        "quantity": 111
+      },
+      {
+        "date": "2025-10-24",
+        "quantity": 79
+      },
+      {
+        "date": "2025-10-25",
+        "quantity": 189
+      },
+      {
+        "date": "2025-10-26",
+        "quantity": 18
+      },
+      {
+        "date": "2025-10-27",
+        "quantity": 44
+      },
+      {
+        "date": "2025-10-28",
+        "quantity": 28
+      },
+      {
+        "date": "2025-10-29",
+        "quantity": 31
+      },
+      {
+        "date": "2025-10-30",
+        "quantity": 107
+      },
+      {
+        "date": "2025-10-31",
+        "quantity": 351
+      },
+      {
+        "date": "2025-11-01",
+        "quantity": 81
+      },
+      {
+        "date": "2025-11-02",
+        "quantity": 1
+      },
+      {
+        "date": "2025-11-03",
+        "quantity": 27
+      },
+      {
+        "date": "2025-11-04",
+        "quantity": 27
+      },
+      {
+        "date": "2025-11-05",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-06",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-07",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-08",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-09",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-10",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-11",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-12",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-13",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-14",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-15",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-16",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-17",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-18",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-19",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-20",
+        "quantity": 180
+      },
+      {
+        "date": "2025-11-21",
+        "quantity": 124
+      }
+    ]
+  },
+  {
+    "id": "MB_1765843970299_5",
+    "name": "플러시 미야옹 비니 (50NYS)",
+    "category": "비니",
+    "currentStock": 183,
+    "price": 43000,
+    "salesHistory": [
+      {
+        "date": "2025-10-23",
+        "quantity": 116
+      },
+      {
+        "date": "2025-10-24",
+        "quantity": 8
+      },
+      {
+        "date": "2025-10-25",
+        "quantity": 54
+      },
+      {
+        "date": "2025-10-26",
+        "quantity": 5
+      },
+      {
+        "date": "2025-10-27",
+        "quantity": 4
+      },
+      {
+        "date": "2025-10-28",
+        "quantity": 89
+      },
+      {
+        "date": "2025-10-29",
+        "quantity": 4
+      },
+      {
+        "date": "2025-10-30",
+        "quantity": 15
+      },
+      {
+        "date": "2025-10-31",
+        "quantity": 80
+      },
+      {
+        "date": "2025-11-01",
+        "quantity": 9
+      },
+      {
+        "date": "2025-11-02",
+        "quantity": 2
+      },
+      {
+        "date": "2025-11-03",
+        "quantity": 11
+      },
+      {
+        "date": "2025-11-04",
+        "quantity": 6
+      },
+      {
+        "date": "2025-11-05",
+        "quantity": 2
+      },
+      {
+        "date": "2025-11-06",
+        "quantity": 4
+      },
+      {
+        "date": "2025-11-07",
+        "quantity": 2
+      },
+      {
+        "date": "2025-11-08",
+        "quantity": 3
+      },
+      {
+        "date": "2025-11-09",
+        "quantity": 5
+      },
+      {
+        "date": "2025-11-10",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-11",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-12",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-13",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-14",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-15",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-16",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-17",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-18",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-19",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-20",
+        "quantity": 1
+      },
+      {
+        "date": "2025-11-21",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "id": "MB_1765843970314_132",
+    "name": "플러시 미야옹 비니 (07YEL)",
+    "category": "비니",
+    "currentStock": 12,
+    "price": 43000,
+    "salesHistory": [
+      {
+        "date": "2025-10-23",
+        "quantity": 0
+      },
+      {
+        "date": "2025-10-24",
+        "quantity": 0
+      },
+      {
+        "date": "2025-10-25",
+        "quantity": 0
+      },
+      {
+        "date": "2025-10-26",
+        "quantity": 0
+      },
+      {
+        "date": "2025-10-27",
+        "quantity": 0
+      },
+      {
+        "date": "2025-10-28",
+        "quantity": 0
+      },
+      {
+        "date": "2025-10-29",
+        "quantity": 0
+      },
+      {
+        "date": "2025-10-30",
+        "quantity": 0
+      },
+      {
+        "date": "2025-10-31",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-01",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-02",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-03",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-04",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-05",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-06",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-07",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-08",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-09",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-10",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-11",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-12",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-13",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-14",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-15",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-16",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-17",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-18",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-19",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-20",
+        "quantity": 0
+      },
+      {
+        "date": "2025-11-21",
+        "quantity": -1
+      }
+    ]
+  }
+]

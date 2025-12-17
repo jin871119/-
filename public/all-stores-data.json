@@ -1,0 +1,181 @@
+{
+  "stores": [
+    {
+      "storeCode": "ALL",
+      "storeName": "전체",
+      "district": "전체",
+      "products": [
+        {
+          "id": "MB_COLOR_43PKL",
+          "name": "3ABNB1156 (43PKL)",
+          "category": "비니",
+          "currentStock": 1221,
+          "price": 43000,
+          "salesHistory": [
+            {
+              "date": "1899-12-29",
+              "quantity": 516
+            }
+          ]
+        },
+        {
+          "id": "MB_COLOR_50BKS",
+          "name": "3ABNB1156 (50BKS)",
+          "category": "비니",
+          "currentStock": 3687,
+          "price": 43000,
+          "salesHistory": [
+            {
+              "date": "1899-12-29",
+              "quantity": 500
+            }
+          ]
+        },
+        {
+          "id": "MB_COLOR_50CRS",
+          "name": "3ABNB1156 (50CRS)",
+          "category": "비니",
+          "currentStock": 4093,
+          "price": 43000,
+          "salesHistory": [
+            {
+              "date": "1899-12-29",
+              "quantity": 656
+            }
+          ]
+        },
+        {
+          "id": "MB_COLOR_50NYS",
+          "name": "3ABNB1156 (50NYS)",
+          "category": "비니",
+          "currentStock": 2040,
+          "price": 43000,
+          "salesHistory": [
+            {
+              "date": "1899-12-29",
+              "quantity": 628
+            }
+          ]
+        },
+        {
+          "id": "MB_COLOR_07SBD",
+          "name": "3ABNB1156 (07SBD)",
+          "category": "비니",
+          "currentStock": 1703,
+          "price": 43000,
+          "salesHistory": [
+            {
+              "date": "1899-12-29",
+              "quantity": 394
+            }
+          ]
+        },
+        {
+          "id": "MB_COLOR_07YEL",
+          "name": "3ABNB1156 (07YEL)",
+          "category": "비니",
+          "currentStock": 1094,
+          "price": 43000,
+          "salesHistory": [
+            {
+              "date": "1899-12-29",
+              "quantity": 113
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "districts": [
+    {
+      "districtName": "전체",
+      "stores": [
+        {
+          "storeCode": "ALL",
+          "storeName": "전체",
+          "district": "전체",
+          "products": [
+            {
+              "id": "MB_COLOR_43PKL",
+              "name": "3ABNB1156 (43PKL)",
+              "category": "비니",
+              "currentStock": 1221,
+              "price": 43000,
+              "salesHistory": [
+                {
+                  "date": "1899-12-29",
+                  "quantity": 516
+                }
+              ]
+            },
+            {
+              "id": "MB_COLOR_50BKS",
+              "name": "3ABNB1156 (50BKS)",
+              "category": "비니",
+              "currentStock": 3687,
+              "price": 43000,
+              "salesHistory": [
+                {
+                  "date": "1899-12-29",
+                  "quantity": 500
+                }
+              ]
+            },
+            {
+              "id": "MB_COLOR_50CRS",
+              "name": "3ABNB1156 (50CRS)",
+              "category": "비니",
+              "currentStock": 4093,
+              "price": 43000,
+              "salesHistory": [
+                {
+                  "date": "1899-12-29",
+                  "quantity": 656
+                }
+              ]
+            },
+            {
+              "id": "MB_COLOR_50NYS",
+              "name": "3ABNB1156 (50NYS)",
+              "category": "비니",
+              "currentStock": 2040,
+              "price": 43000,
+              "salesHistory": [
+                {
+                  "date": "1899-12-29",
+                  "quantity": 628
+                }
+              ]
+            },
+            {
+              "id": "MB_COLOR_07SBD",
+              "name": "3ABNB1156 (07SBD)",
+              "category": "비니",
+              "currentStock": 1703,
+              "price": 43000,
+              "salesHistory": [
+                {
+                  "date": "1899-12-29",
+                  "quantity": 394
+                }
+              ]
+            },
+            {
+              "id": "MB_COLOR_07YEL",
+              "name": "3ABNB1156 (07YEL)",
+              "category": "비니",
+              "currentStock": 1094,
+              "price": 43000,
+              "salesHistory": [
+                {
+                  "date": "1899-12-29",
+                  "quantity": 113
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
