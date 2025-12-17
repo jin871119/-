@@ -20,7 +20,12 @@ export const getInventoryAnalysis = async (products: ProductForecast[]): Promise
     // API 키 확인
     const apiKey = getApiKey();
     if (!apiKey) {
-      return "⚠️ **API 키가 설정되지 않았습니다.**\n\n`.env.local` 파일을 생성하고 다음 내용을 추가해주세요:\n```\nVITE_GEMINI_API_KEY=your_api_key_here\n```\n\nAPI 키는 https://aistudio.google.com/apikey 에서 발급받을 수 있습니다.";
+      const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+      if (isVercel) {
+        return "⚠️ **API 키가 설정되지 않았습니다.**\n\n**Vercel 환경 변수 설정 방법:**\n\n1. Vercel 대시보드 접속: https://vercel.com\n2. 프로젝트 선택 → Settings → Environment Variables\n3. 다음 환경 변수 추가:\n   - **Key**: `VITE_GEMINI_API_KEY`\n   - **Value**: (Gemini API 키)\n   - **Environment**: Production, Preview, Development (모두 선택)\n4. 저장 후 **Redeploy** 클릭\n\n**API 키 발급:**\nhttps://aistudio.google.com/apikey\n\n**로컬 개발 시:**\n`.env.local` 파일에 `VITE_GEMINI_API_KEY=your_api_key_here` 추가";
+      } else {
+        return "⚠️ **API 키가 설정되지 않았습니다.**\n\n`.env.local` 파일을 생성하고 다음 내용을 추가해주세요:\n```\nVITE_GEMINI_API_KEY=your_api_key_here\n```\n\nAPI 키는 https://aistudio.google.com/apikey 에서 발급받을 수 있습니다.";
+      }
     }
 
     // AI 인스턴스 생성
