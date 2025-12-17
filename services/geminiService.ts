@@ -3,13 +3,25 @@ import { ProductForecast, StockLevel } from "../types";
 
 // API 키 확인
 const getApiKey = (): string | null => {
+  // Vite 환경 변수 읽기 (빌드 시점에 주입됨)
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 
                  import.meta.env.GEMINI_API_KEY || 
                  (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
+                 (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY) ||
                  (typeof process !== 'undefined' && process.env?.API_KEY);
   
-  if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY' || apiKey.trim() === '') {
-    console.warn('GEMINI_API_KEY가 설정되지 않았습니다. .env.local 파일에 GEMINI_API_KEY를 추가해주세요.');
+  // 디버깅: 환경 변수 확인 (프로덕션에서는 제거)
+  if (import.meta.env.DEV) {
+    console.log('[Gemini Service] 환경 변수 확인:', {
+      'import.meta.env.VITE_GEMINI_API_KEY': import.meta.env.VITE_GEMINI_API_KEY ? '설정됨' : '없음',
+      'import.meta.env.GEMINI_API_KEY': import.meta.env.GEMINI_API_KEY ? '설정됨' : '없음',
+      'process.env.VITE_GEMINI_API_KEY': typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY ? '설정됨' : '없음',
+      'process.env.GEMINI_API_KEY': typeof process !== 'undefined' && process.env?.GEMINI_API_KEY ? '설정됨' : '없음',
+    });
+  }
+  
+  if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY' || (typeof apiKey === 'string' && apiKey.trim() === '')) {
+    console.warn('[Gemini Service] API 키가 설정되지 않았습니다.');
     return null;
   }
   return apiKey;
